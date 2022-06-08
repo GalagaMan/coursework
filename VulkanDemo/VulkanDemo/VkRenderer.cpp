@@ -15,7 +15,6 @@ VkRenderer::VkRenderer()
 		}
 		std::cerr << "\n";
 	}
-	//auto const InstanceExtensions = instance.enum
 	InitCommandBuffer();
 	SetUpSurface();
 }
@@ -30,7 +29,27 @@ VkRenderer::~VkRenderer()
 
 void VkRenderer::CreateInstance()
 {
-	instance = vk::createInstance(m_instance_info);
+	ExtensionNames = glfwGetRequiredInstanceExtensions(&ExtensionCount);
+
+	vk::ApplicationInfo application_info
+	{
+		"Vulkan 1.3 Demo",
+		VK_MAKE_VERSION(1, 0, 0),
+		"Vulkan",
+		VK_MAKE_VERSION(1, 0, 0),
+		VK_API_VERSION_1_3
+	};
+
+	vk::InstanceCreateInfo instance_info
+	{
+		{},
+		&application_info,
+		{},{},
+		ExtensionCount,
+		ExtensionNames
+	};
+
+	instance = vk::createInstance(instance_info);
 	std::cerr << "instance created successfully\n";
 }
 
@@ -65,6 +84,38 @@ void VkRenderer::InitCommandBuffer()
 
 void VkRenderer::SetUpSurface()
 {
+	size_t available_queueFamilyIndex = m_PhysDevice.getSurfaceSupportKHR(graphicQueueIndex, m_surface) ? graphicQueueIndex : m_queue_family_properties.size();
+	if (available_queueFamilyIndex == m_queue_family_properties.size())
+	{
+		for(size_t i{0}; i < m_queue_family_properties.size(); i++)
+		{
+			if ((m_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) && m_PhysDevice.getSurfaceSupportKHR(i, m_surface))
+			{
+				graphicQueueIndex = i;
+				available_queueFamilyIndex = i;
+				break;
+			}
+		}
+	}
+	if(available_queueFamilyIndex == m_queue_family_properties.size())
+	{
+		for(size_t i{0}; i < m_queue_family_properties.size(); i++)
+		{
+			if (m_PhysDevice.getSurfaceSupportKHR(i, m_surface))
+			{
+				available_queueFamilyIndex = i;
+				break;
+			}
+		}
+	}
+	if ((graphicQueueIndex == m_queue_family_properties.size()) || (available_queueFamilyIndex == m_queue_family_properties.size()))
+		throw std::runtime_error("no queue suitable for graphics found");
+
+	std::vector<vk::SurfaceFormatKHR> surfaceFormats = m_PhysDevice.getSurfaceFormatsKHR(m_surface);
+	if (surfaceFormats.empty())
+		throw std::exception("no vulkan rendering surface formats found");
+	vk::Format format = (surfaceFormats[0].format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : surfaceFormats[0].format;
+
 
 }
 

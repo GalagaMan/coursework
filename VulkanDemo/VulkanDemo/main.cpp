@@ -18,13 +18,13 @@ const char* title{ "Vulkan 1.3 Demo" };
 
 void Run(/*const Window& window*/ )
 {
-	VkRenderer vkd{};
 	InitWindowData window_data{ WIDTH, HEIGHT, title };	
 	Window const window(window_data);
+	VkRenderer vkd{};
 	if (glfwVulkanSupported())
 	{
-		VkResult const error = glfwCreateWindowSurface(static_cast<VkInstance>(vkd.instance), window.window_, nullptr, &vkd.surface);
-			if (error != VK_SUCCESS)
+		VkResult const error = glfwCreateWindowSurface(vkd.instance, window.window_, nullptr, &vkd.surface);
+		if (error != VK_SUCCESS)
 			throw std::runtime_error("failed to create vulkan rendering surface");
 		vkd.m_surface = vk::SurfaceKHR{ vkd.surface };
 		while (!glfwWindowShouldClose(window.window_))
@@ -45,9 +45,9 @@ int main()
 		std::cerr << error.what() << " " << error.code();
 		return EXIT_FAILURE;
 	}
-	catch (std::exception& e)
+	catch (std::exception& error)
 	{
-		std::cerr << e.what() << std::endl;
+		std::cerr << error.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 	catch (...)
