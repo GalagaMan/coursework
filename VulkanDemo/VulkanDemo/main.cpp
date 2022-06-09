@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <stdexcept>
+#include "data.h"
 #include "VkRenderer.h"
 #include "Window.h"
 
@@ -11,22 +12,13 @@ bool debug = true;
 #endif
 
 
-constexpr uint32_t WIDTH {640};
-constexpr uint32_t HEIGHT {480};
-const char* title{ "Vulkan 1.3 Demo" };
-
-
 void Run(/*const Window& window*/ )
 {
-	InitWindowData window_data{ WIDTH, HEIGHT, title };	
+	InitWindowData window_data{ width, height, title };	
 	Window const window(window_data);
-	VkRenderer vkd{};
 	if (glfwVulkanSupported())
 	{
-		VkResult const error = glfwCreateWindowSurface(vkd.instance, window.window_, nullptr, &vkd.surface);
-		if (error != VK_SUCCESS)
-			throw std::runtime_error("failed to create vulkan rendering surface");
-		vkd.m_surface = vk::SurfaceKHR{ vkd.surface };
+		VkRenderer vkd{window.window_};
 		while (!glfwWindowShouldClose(window.window_))
 		{
 			glfwWaitEvents();

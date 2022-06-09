@@ -160,6 +160,7 @@
     <ClCompile Include="XPipeline.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="data.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="VkRenderer.h" />
