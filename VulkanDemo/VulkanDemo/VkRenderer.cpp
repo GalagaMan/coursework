@@ -7,12 +7,12 @@ VkRenderer::VkRenderer(GLFWwindow* windowHandle)
 	CreateInstance();
 	SetUpVkDevice();
 	std::cerr << "video adapter utilized: " << m_PhysDevice.getProperties().deviceName << " " << to_string(m_PhysDevice.getProperties().deviceType) << "\n";
-	auto const Extensions = m_PhysDevice.enumerateDeviceExtensionProperties();
-	for(vk::ExtensionProperties const& extension : Extensions)
+	auto prer = m_PhysDevice.enumerateDeviceExtensionProperties();
+	for (auto extension_properties : prer)
 	{
-		for(auto const charc : extension.extensionName)
+		for (auto chase : extension_properties.extensionName)
 		{
-			std::cerr << charc;
+			std::cerr << chase;
 		}
 		std::cerr << "\n";
 	}
@@ -69,14 +69,33 @@ void VkRenderer::SetUpVkDevice()
 	auto const PropertyIterator = std::find_if(m_queue_family_properties.begin(),
 		m_queue_family_properties.end(), [](vk::QueueFamilyProperties const& queue_family_properties)
 		{return queue_family_properties.queueFlags & vk::QueueFlagBits::eGraphics; });
-	
+
 	graphicsQueueFamilyIndex = std::distance(m_queue_family_properties.begin(), PropertyIterator);
 	assert(graphicsQueueFamilyIndex < m_queue_family_properties.size());
 
 	constexpr float_t qPriority = 0.0f;
-	vk::DeviceQueueCreateInfo DeviceQueueInfo(vk::DeviceQueueCreateFlags{}, (graphicsQueueFamilyIndex), 1, &qPriority);
+	vk::DeviceQueueCreateInfo DeviceQueueInfo(vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphicsQueueFamilyIndex), 1, &qPriority);
 
-	m_device = m_PhysDevice.createDevice(vk::DeviceCreateInfo{ vk::DeviceCreateFlags(), DeviceQueueInfo });
+	auto deviceExtensionProperties = m_PhysDevice.enumerateDeviceExtensionProperties();
+
+	std::vector<const char*> deviceExtensions{};
+	deviceExtensions.reserve(deviceExtensionProperties.size());
+	
+	for(size_t i{0}; i < deviceExtensionProperties.size(); i++)
+	{
+		deviceExtensions.push_back(deviceExtensionProperties[i].extensionName);
+	}
+
+
+	vk::DeviceCreateInfo const deviceInfo
+	{
+		vk::DeviceCreateFlags(),
+		DeviceQueueInfo,
+		{},
+		deviceExtensions
+	};
+
+	m_device = m_PhysDevice.createDevice(deviceInfo);
 
 	std::cerr << "device set up successfully\n";
 }
@@ -148,19 +167,22 @@ void VkRenderer::InitSwapchain()
 		SwapExtent = m_surface_capabilities.currentExtent;
 	}
 
-	vk::PresentModeKHR const swapCurrentMode = vk::PresentModeKHR::eFifo;
+	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eFifo;
 
-	vk::SurfaceTransformFlagBitsKHR precedingTransformation = (m_surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
+	vk::SurfaceTransformFlagBitsKHR const precedingTransformation = (m_surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		? vk::SurfaceTransformFlagBitsKHR::eIdentity
 		: m_surface_capabilities.currentTransform;
 
-	vk::CompositeAlphaFlagBitsKHR alphaComposite = (m_surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePreMultiplied)
+	vk::CompositeAlphaFlagBitsKHR const alphaComposite = (m_surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePreMultiplied)
 		? vk::CompositeAlphaFlagBitsKHR::ePreMultiplied : (m_surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::ePostMultiplied)
 		? vk::CompositeAlphaFlagBitsKHR::ePostMultiplied : (m_surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit)
 		? vk::CompositeAlphaFlagBitsKHR::eInherit : vk::CompositeAlphaFlagBitsKHR::eOpaque;
 
+	std::array<uint32_t, 2> const queueFamilyIndices{ static_cast<uint32_t>(graphicsQueueFamilyIndex), static_cast<uint32_t>(m_available_queue_family_index) };
+
+
 	vk::SwapchainCreateInfoKHR swapchainInfo
-	{{},
+	{ vk::SwapchainCreateFlagsKHR{},
 		m_surface,
 		m_surface_capabilities.minImageCount,
 		m_format,
@@ -176,17 +198,21 @@ void VkRenderer::InitSwapchain()
 		nullptr,
 	};
 
-	uint32_t const queueFamilyIndices[2] = { static_cast<uint32_t>(graphicsQueueFamilyIndex), static_cast<uint32_t>(m_available_queue_family_index) };
+	//auto const queueFamilyIndices[2] = { static_cast<uint32_t>(graphicsQueueFamilyIndex), static_cast<uint32_t>(m_available_queue_family_index) };
+	
 	if (graphicsQueueFamilyIndex != m_available_queue_family_index)
 	{
 		swapchainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		swapchainInfo.queueFamilyIndexCount = 2;
-		swapchainInfo.pQueueFamilyIndices = queueFamilyIndices;
+		swapchainInfo.pQueueFamilyIndices = queueFamilyIndices.data();
 	}
 
-	m_swapchain = m_device.createSwapchainKHR(swapchainInfo, nullptr);
 
+	m_swapchain = m_device.createSwapchainKHR(swapchainInfo);
+	
+	
 	std::vector<vk::Image> swapchainImages = m_device.getSwapchainImagesKHR(m_swapchain);
+
 
 	m_imageViews.reserve(swapchainImages.size());
 
@@ -205,6 +231,8 @@ void VkRenderer::InitSwapchain()
 		imageViewInfo.image = image;
 		m_imageViews.push_back(m_device.createImageView(imageViewInfo));
 	}
+
+	std::cerr << "swapchain created successfully\n";
 
 }
 

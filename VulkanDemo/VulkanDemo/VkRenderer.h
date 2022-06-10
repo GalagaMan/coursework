@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 #include "data.h"
 
+#define VK_USE_PLATFORM_WIN32_KHR
+
 
 class VkRenderer
 {
