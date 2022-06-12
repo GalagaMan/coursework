@@ -2,9 +2,11 @@
 #include <iostream>
 #include <vulkan/vulkan.hpp>
 #include <GLFW/glfw3.h>
+#include <glm.hpp>
 #include "data.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
+#define GLM_FORCE_RADIANS
 
 
 class VkRenderer
@@ -17,8 +19,11 @@ private:
 	vk::Instance m_instance;
 
 	//device related, both physical and virtual
-	ptrdiff_t graphicsQueueFamilyIndex;
+	ptrdiff_t m_graphics_queue_family_index;
 	vk::PhysicalDevice m_PhysDevice;
+
+	vk::PhysicalDeviceMemoryProperties m_device_memory_properties;
+
 	vk::Device m_device;
 	std::vector<vk::QueueFamilyProperties> m_queue_family_properties;
 
@@ -34,15 +39,21 @@ private:
 
 	std::vector<vk::ImageView> m_imageViews;
 	vk::SwapchainKHR m_swapchain;
-	
+
+	vk::Format m_depth_format;
+	vk::ImageTiling m_image_tiling;
+
+	vk::Image m_depth_image;
+	vk::DeviceMemory m_depth_mem;
+	vk::ImageView m_depth_view;
 
 	void CreateInstance();
 	void SetUpVkDevice();
 	void InitCommandBuffer();
 	void SetUpSurface();
 	void InitSwapchain();
-	//setup surface
-	
+	void SetUpDepthBuffer();
+	void SetUpUniformBuffer();
 
 public:
 	VkRenderer(GLFWwindow* windowHandle);

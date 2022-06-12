@@ -23,11 +23,14 @@ VkRenderer::VkRenderer(GLFWwindow* windowHandle)
 
 VkRenderer::~VkRenderer()
 {
+	m_device.destroyImageView(m_depth_view);
+	m_device.freeMemory(m_depth_mem);
+	m_device.destroyImage(m_depth_image);
 	for (auto const& imageView : m_imageViews)
 	{
 		m_device.destroyImageView(imageView);
 	}
-	m_device.destroySwapchainKHR();
+	m_device.destroySwapchainKHR(m_swapchain);
 	m_instance.destroySurfaceKHR(m_surface);
 	m_device.freeCommandBuffers(m_command_pool, m_command_buffer);
 	m_device.destroyCommandPool(m_command_pool);
@@ -39,7 +42,7 @@ void VkRenderer::CreateInstance()
 {
 	ExtensionNames = glfwGetRequiredInstanceExtensions(&ExtensionCount);
 
-	vk::ApplicationInfo application_info
+	vk::ApplicationInfo const application_info
 	{
 		title,
 		VK_MAKE_VERSION(1, 0, 0),
@@ -48,7 +51,7 @@ void VkRenderer::CreateInstance()
 		VK_API_VERSION_1_3
 	};
 
-	vk::InstanceCreateInfo instance_info
+	vk::InstanceCreateInfo const instance_info
 	{
 		{},
 		&application_info,
@@ -64,27 +67,30 @@ void VkRenderer::CreateInstance()
 void VkRenderer::SetUpVkDevice()
 {
 	m_PhysDevice = m_instance.enumeratePhysicalDevices().front();
+
 	m_queue_family_properties = m_PhysDevice.getQueueFamilyProperties();
 
 	auto const PropertyIterator = std::find_if(m_queue_family_properties.begin(),
 		m_queue_family_properties.end(), [](vk::QueueFamilyProperties const& queue_family_properties)
 		{return queue_family_properties.queueFlags & vk::QueueFlagBits::eGraphics; });
 
-	graphicsQueueFamilyIndex = std::distance(m_queue_family_properties.begin(), PropertyIterator);
-	assert(graphicsQueueFamilyIndex < m_queue_family_properties.size());
+	m_graphics_queue_family_index = std::distance(m_queue_family_properties.begin(), PropertyIterator);
+	assert(m_graphics_queue_family_index < m_queue_family_properties.size());
 
 	constexpr float_t qPriority = 0.0f;
-	vk::DeviceQueueCreateInfo DeviceQueueInfo(vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphicsQueueFamilyIndex), 1, &qPriority);
+	vk::DeviceQueueCreateInfo DeviceQueueInfo{vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(m_graphics_queue_family_index), 1, &qPriority};
 
-	auto deviceExtensionProperties = m_PhysDevice.enumerateDeviceExtensionProperties();
+	auto const deviceExtensionProperties = m_PhysDevice.enumerateDeviceExtensionProperties();
 
 	std::vector<const char*> deviceExtensions{};
-	deviceExtensions.reserve(deviceExtensionProperties.size());
-	
-	for(size_t i{0}; i < deviceExtensionProperties.size(); i++)
-	{
-		deviceExtensions.push_back(deviceExtensionProperties[i].extensionName);
-	}
+
+	deviceExtensions.emplace_back("VK_KHR_swapchain");
+	//deviceExtensions.reserve(deviceExtensionProperties.size());
+	//
+	//for(size_t i{0}; i < deviceExtensionProperties.size(); i++)
+	//{
+	//	deviceExtensions.push_back(deviceExtensionProperties[i].extensionName);
+	//}
 
 
 	vk::DeviceCreateInfo const deviceInfo
@@ -102,7 +108,7 @@ void VkRenderer::SetUpVkDevice()
 
 void VkRenderer::InitCommandBuffer()
 {
-	m_command_pool = m_device.createCommandPool(vk::CommandPoolCreateInfo{ vk::CommandPoolCreateFlags{}, static_cast<uint32_t>(graphicsQueueFamilyIndex) });
+	m_command_pool = m_device.createCommandPool(vk::CommandPoolCreateInfo{ vk::CommandPoolCreateFlags{}, static_cast<uint32_t>(m_graphics_queue_family_index) });
 
 	m_command_buffer = m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{ m_command_pool, vk::CommandBufferLevel::ePrimary, 1 }).front();
 
@@ -117,14 +123,14 @@ void VkRenderer::SetUpSurface()
 		throw std::runtime_error("failed to create vulkan rendering surface");
 	m_surface = vk::SurfaceKHR{ surface };
 
-	m_available_queue_family_index = m_PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(graphicsQueueFamilyIndex), m_surface) ? graphicsQueueFamilyIndex : m_queue_family_properties.size();
+	m_available_queue_family_index = m_PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(m_graphics_queue_family_index), m_surface) ? m_graphics_queue_family_index : m_queue_family_properties.size();
 	if (m_available_queue_family_index == m_queue_family_properties.size())
 	{
 		for(size_t i{0}; i < m_queue_family_properties.size(); i++)
 		{
 			if ((m_queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) && m_PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), m_surface))
 			{
-				graphicsQueueFamilyIndex = static_cast<uint32_t>(i);
+				m_graphics_queue_family_index = static_cast<uint32_t>(i);
 				m_available_queue_family_index = static_cast<uint32_t>(i);
 				break;
 			}
@@ -141,7 +147,7 @@ void VkRenderer::SetUpSurface()
 			}
 		}
 	}
-	if ((graphicsQueueFamilyIndex == m_queue_family_properties.size()) || (m_available_queue_family_index == m_queue_family_properties.size()))
+	if ((m_graphics_queue_family_index == m_queue_family_properties.size()) || (m_available_queue_family_index == m_queue_family_properties.size()))
 		throw std::runtime_error("no queue suitable for graphics found");
 
 	std::vector<vk::SurfaceFormatKHR> const surfaceFormats = m_PhysDevice.getSurfaceFormatsKHR(m_surface);
@@ -178,7 +184,7 @@ void VkRenderer::InitSwapchain()
 		? vk::CompositeAlphaFlagBitsKHR::ePostMultiplied : (m_surface_capabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit)
 		? vk::CompositeAlphaFlagBitsKHR::eInherit : vk::CompositeAlphaFlagBitsKHR::eOpaque;
 
-	std::array<uint32_t, 2> const queueFamilyIndices{ static_cast<uint32_t>(graphicsQueueFamilyIndex), static_cast<uint32_t>(m_available_queue_family_index) };
+	std::array<uint32_t, 2> const queueFamilyIndices{ static_cast<uint32_t>(m_graphics_queue_family_index), static_cast<uint32_t>(m_available_queue_family_index) };
 
 
 	vk::SwapchainCreateInfoKHR swapchainInfo
@@ -197,10 +203,8 @@ void VkRenderer::InitSwapchain()
 		VK_TRUE,
 		nullptr,
 	};
-
-	//auto const queueFamilyIndices[2] = { static_cast<uint32_t>(graphicsQueueFamilyIndex), static_cast<uint32_t>(m_available_queue_family_index) };
 	
-	if (graphicsQueueFamilyIndex != m_available_queue_family_index)
+	if (m_graphics_queue_family_index != m_available_queue_family_index)
 	{
 		swapchainInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		swapchainInfo.queueFamilyIndexCount = 2;
@@ -235,5 +239,64 @@ void VkRenderer::InitSwapchain()
 	std::cerr << "swapchain created successfully\n";
 
 }
+
+void VkRenderer::SetUpDepthBuffer()
+{
+	m_depth_format = vk::Format::eD16Unorm;
+	vk::FormatProperties formatProperties = m_PhysDevice.getFormatProperties(m_depth_format);
+
+	if (formatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+		m_image_tiling = vk::ImageTiling::eLinear;
+	else if (formatProperties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
+		m_image_tiling = vk::ImageTiling::eOptimal;
+	else
+		throw std::runtime_error("Depth attachment is not supported");
+
+	vk::ImageCreateInfo imageInfo
+	{
+		vk::ImageCreateFlagBits{},
+		vk::ImageType::e2D,
+		m_depth_format,
+		vk::Extent3D(width, height, 1),
+		1,
+		1,
+		vk::SampleCountFlagBits::e1,
+		m_image_tiling,
+		vk::ImageUsageFlagBits::eDepthStencilAttachment
+	};
+	m_depth_image = m_device.createImage(imageInfo);
+
+	m_device_memory_properties = m_PhysDevice.getMemoryProperties();
+	vk::MemoryRequirements memRequirements = m_device.getImageMemoryRequirements(m_depth_image);
+
+	auto typeBits = memRequirements.memoryTypeBits;
+	auto typeIndex = uint32_t(~0);
+
+	for (uint32_t i{ 0 }; i < m_device_memory_properties.memoryTypeCount; i++)
+	{
+		if ((typeBits & 1) && ((m_device_memory_properties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+			== vk::MemoryPropertyFlagBits::eDeviceLocal))
+		{
+			typeIndex = i;
+			break;
+		}
+		typeBits >>= 1;
+	}
+	assert(typeIndex != uint32_t(~0));
+
+	m_depth_mem = m_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirements.size, typeIndex });
+	m_device.bindImageMemory(m_depth_image, m_depth_mem, 0);
+
+	m_depth_view = m_device.createImageView(vk::ImageViewCreateInfo{ vk::ImageViewCreateFlags{}, m_depth_image, vk::ImageViewType::e2D, m_depth_format, {},
+		{ vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 }});
+
+	std::cerr << "depth buffer initialized successfully\n";
+}
+
+void VkRenderer::SetUpUniformBuffer()
+{
+		
+}
+
 
 
