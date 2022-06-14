@@ -7,29 +7,43 @@ VkRenderer::VkRenderer(GLFWwindow* windowHandle)
 	CreateInstance();
 	SetUpVkDevice();
 	std::cerr << "video adapter utilized: " << m_PhysDevice.getProperties().deviceName << " " << to_string(m_PhysDevice.getProperties().deviceType) << "\n";
-	auto prer = m_PhysDevice.enumerateDeviceExtensionProperties();
+	auto const prer = m_PhysDevice.enumerateDeviceExtensionProperties();
 	for (auto extension_properties : prer)
 	{
-		for (auto chase : extension_properties.extensionName)
+		for (auto const extensionChar : extension_properties.extensionName)
 		{
-			std::cerr << chase;
+			std::cerr << extensionChar;
 		}
 		std::cerr << "\n";
 	}
 	InitCommandBuffer();
 	SetUpSurface();
 	InitSwapchain();
+	SetUpDepthBuffer();
+	SetUpUniformBuffer();
+	CreatePipelineLayout();
+	InitDescriptorSet();
+	InitRenderpass();
 }
 
 VkRenderer::~VkRenderer()
 {
+	m_device.destroyRenderPass(render_pass);
+	m_device.freeDescriptorSets(descriptor_pool, descriptor_set);
+	m_device.destroyDescriptorPool(descriptor_pool);
+	m_device.destroy(pipeline_layout);
+	m_device.destroy(descriptor_set_layout);
+	m_device.freeMemory(uniform_memory);
+	m_device.destroyBuffer(uniform_buffer);
 	m_device.destroyImageView(m_depth_view);
 	m_device.freeMemory(m_depth_mem);
 	m_device.destroyImage(m_depth_image);
+
 	for (auto const& imageView : m_imageViews)
 	{
 		m_device.destroyImageView(imageView);
 	}
+
 	m_device.destroySwapchainKHR(m_swapchain);
 	m_instance.destroySurfaceKHR(m_surface);
 	m_device.freeCommandBuffers(m_command_pool, m_command_buffer);
@@ -37,6 +51,24 @@ VkRenderer::~VkRenderer()
 	m_device.destroy();
 	m_instance.destroy();
 }
+
+
+uint32_t VkRenderer::FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask)
+{
+	auto typeIndex = uint32_t{};
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+	{
+		if ((typeBits & 1) && ((memProperties.memoryTypes[i].propertyFlags & requiredBitmask) == requiredBitmask))
+		{
+			typeIndex = i;
+			break;
+		}
+		typeBits >>= 1;
+	}
+	assert(typeIndex != uint32_t(~0));
+	return typeIndex;
+}
+
 
 void VkRenderer::CreateInstance()
 {
@@ -86,7 +118,7 @@ void VkRenderer::SetUpVkDevice()
 
 	deviceExtensions.emplace_back("VK_KHR_swapchain");
 	//deviceExtensions.reserve(deviceExtensionProperties.size());
-	//
+	
 	//for(size_t i{0}; i < deviceExtensionProperties.size(); i++)
 	//{
 	//	deviceExtensions.push_back(deviceExtensionProperties[i].extensionName);
@@ -173,7 +205,7 @@ void VkRenderer::InitSwapchain()
 		SwapExtent = m_surface_capabilities.currentExtent;
 	}
 
-	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eFifo;
+	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eMailbox;
 
 	vk::SurfaceTransformFlagBitsKHR const precedingTransformation = (m_surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		? vk::SurfaceTransformFlagBitsKHR::eIdentity
@@ -188,7 +220,8 @@ void VkRenderer::InitSwapchain()
 
 
 	vk::SwapchainCreateInfoKHR swapchainInfo
-	{ vk::SwapchainCreateFlagsKHR{},
+	{
+		vk::SwapchainCreateFlagsKHR{},
 		m_surface,
 		m_surface_capabilities.minImageCount,
 		m_format,
@@ -217,7 +250,7 @@ void VkRenderer::InitSwapchain()
 	
 	std::vector<vk::Image> swapchainImages = m_device.getSwapchainImagesKHR(m_swapchain);
 
-
+	
 	m_imageViews.reserve(swapchainImages.size());
 
 	vk::ImageViewCreateInfo imageViewInfo
@@ -267,22 +300,24 @@ void VkRenderer::SetUpDepthBuffer()
 	m_depth_image = m_device.createImage(imageInfo);
 
 	m_device_memory_properties = m_PhysDevice.getMemoryProperties();
-	vk::MemoryRequirements memRequirements = m_device.getImageMemoryRequirements(m_depth_image);
+	vk::MemoryRequirements const memRequirements = m_device.getImageMemoryRequirements(m_depth_image);
 
-	auto typeBits = memRequirements.memoryTypeBits;
-	auto typeIndex = uint32_t(~0);
+	//auto typeBits = memRequirements.memoryTypeBits;
+	//auto typeIndex = uint32_t{};
+	//
+	//for (uint32_t i{ 0 }; i < m_device_memory_properties.memoryTypeCount; i++)
+	//{
+	//	if ((typeBits & 1) && ((m_device_memory_properties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+	//		== vk::MemoryPropertyFlagBits::eDeviceLocal))
+	//	{
+	//		typeIndex = i;
+	//		break;
+	//	}
+	//	typeBits >>= 1;
+	//}
+	//assert(typeIndex != uint32_t(~0));
 
-	for (uint32_t i{ 0 }; i < m_device_memory_properties.memoryTypeCount; i++)
-	{
-		if ((typeBits & 1) && ((m_device_memory_properties.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
-			== vk::MemoryPropertyFlagBits::eDeviceLocal))
-		{
-			typeIndex = i;
-			break;
-		}
-		typeBits >>= 1;
-	}
-	assert(typeIndex != uint32_t(~0));
+	auto const typeIndex = FindMemoryType(m_PhysDevice.getMemoryProperties(), memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 	m_depth_mem = m_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirements.size, typeIndex });
 	m_device.bindImageMemory(m_depth_image, m_depth_mem, 0);
@@ -295,8 +330,91 @@ void VkRenderer::SetUpDepthBuffer()
 
 void VkRenderer::SetUpUniformBuffer()
 {
-		
+	uniform_buffer = m_device.createBuffer(vk::BufferCreateInfo{ vk::BufferCreateFlags{}, sizeof(mvpc), vk::BufferUsageFlagBits::eUniformBuffer });
+
+	vk::MemoryRequirements const memRequirements = m_device.getBufferMemoryRequirements(uniform_buffer);
+
+	uint32_t const typeIndex = FindMemoryType(m_PhysDevice.getMemoryProperties(), memRequirements.memoryTypeBits, 
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
+
+	uniform_memory = m_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirements.size, typeIndex });
+
+	auto* dataPtr = static_cast<uint32_t*>(m_device.mapMemory(uniform_memory, 0, memRequirements.size));
+	memcpy(dataPtr, &mvpc, sizeof(mvpc));
+
+	m_device.unmapMemory(uniform_memory);
+
+	m_device.bindBufferMemory(uniform_buffer, uniform_memory, 0);
+
+	std::cerr << "uniform buffer set up successfully\n";
 }
 
+void VkRenderer::CreatePipelineLayout()
+{
+	vk::DescriptorSetLayoutBinding descriptorBinding
+	{
+		{},
+		vk::DescriptorType::eUniformBuffer, 1,
+		vk::ShaderStageFlagBits::eVertex
+	};
 
+	descriptor_set_layout = m_device.createDescriptorSetLayout(vk::DescriptorSetLayoutCreateInfo{ vk::DescriptorSetLayoutCreateFlags{}, descriptorBinding });
+
+	pipeline_layout = m_device.createPipelineLayout(vk::PipelineLayoutCreateInfo{ vk::PipelineLayoutCreateFlags{}, descriptor_set_layout });
+
+	std::cerr << "Pipeline layout created successfully\n";
+}
+
+void VkRenderer::InitDescriptorSet()
+{
+	vk::DescriptorPoolSize poolSize{ vk::DescriptorType::eUniformBuffer, 1 };
+
+	descriptor_pool = m_device.createDescriptorPool(vk::DescriptorPoolCreateInfo{ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, poolSize });
+
+	vk::DescriptorSetAllocateInfo const descriptorSetAllocationInfo{ descriptor_pool, descriptor_set_layout };
+	descriptor_set = m_device.allocateDescriptorSets(descriptorSetAllocationInfo).front();
+
+	vk::DescriptorBufferInfo descriptorBufferInfo{ uniform_buffer, 0, sizeof(glm::mat4x4) };
+	vk::WriteDescriptorSet writeDescriptorSet{ descriptor_set, 0, 0, vk::DescriptorType::eUniformBuffer, {}, descriptorBufferInfo };
+
+	m_device.updateDescriptorSets(writeDescriptorSet, nullptr);
+
+	std::cerr << "descriptor set initialized successfully\n";
+}
+
+void VkRenderer::InitRenderpass()
+{
+	attachment_descriptions[0] = vk::AttachmentDescription
+	{
+		vk::AttachmentDescriptionFlags{},
+		m_format,
+		vk::SampleCountFlagBits::e1,
+		vk::AttachmentLoadOp::eClear,
+		vk::AttachmentStoreOp::eStore,
+		vk::AttachmentLoadOp::eDontCare,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::ImageLayout::eUndefined,
+		vk::ImageLayout::ePresentSrcKHR
+	};
+	attachment_descriptions[1] = vk::AttachmentDescription
+	{
+		vk::AttachmentDescriptionFlags{},
+		m_depth_format,
+		vk::SampleCountFlagBits::e1,
+		vk::AttachmentLoadOp::eClear,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::AttachmentLoadOp::eDontCare,
+		vk::AttachmentStoreOp::eDontCare,
+		vk::ImageLayout::eUndefined,
+		vk::ImageLayout::eDepthAttachmentOptimal
+	};
+
+	vk::AttachmentReference colorRef{ 0, vk::ImageLayout::eColorAttachmentOptimal };
+	vk::AttachmentReference depthRef{ 1, vk::ImageLayout::eDepthStencilAttachmentOptimal };
+	vk::SubpassDescription subpass{ vk::SubpassDescriptionFlags{}, vk::PipelineBindPoint::eGraphics, {}, colorRef, {}, &depthRef };
+
+	render_pass = m_device.createRenderPass(vk::RenderPassCreateInfo{ vk::RenderPassCreateFlags{}, attachment_descriptions, subpass });
+
+	std::cerr << "renderpass initialized successfully\n";
+}
 

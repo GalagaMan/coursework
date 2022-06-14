@@ -12,6 +12,18 @@
 class VkRenderer
 {
 private:
+	glm::mat4x4 model{ glm::mat4x4(1.0f) };
+	glm::mat4x4 view{ glm::lookAt(glm::vec3{-5.0f, 3.0f, -10.0f}, glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, -1.0f, 0.0f}) };
+	glm::mat4x4 proj = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+
+	glm::mat4x4 clip = glm::mat4x4{ 1.0f, 0.0f, 0.0f, 0.0f,
+						0.0f, -1.0f, 0.0f, 0.0f,
+						0.0f, 0.0f, 0.5f, 0.0f,
+						0.0f, 0.0f, 0.5f, 1.0f };
+
+	glm::mat4x4 mvpc = clip * proj * view * model;
+
+
 	GLFWwindow* window;
 
 	const char* const* ExtensionNames;
@@ -47,6 +59,18 @@ private:
 	vk::DeviceMemory m_depth_mem;
 	vk::ImageView m_depth_view;
 
+	vk::Buffer uniform_buffer;
+	vk::DeviceMemory uniform_memory;
+
+	vk::DescriptorSetLayout descriptor_set_layout;
+
+	vk::PipelineLayout pipeline_layout;
+
+	vk::DescriptorPool descriptor_pool;
+	vk::DescriptorSet descriptor_set;
+
+	vk::RenderPass render_pass;
+
 	void CreateInstance();
 	void SetUpVkDevice();
 	void InitCommandBuffer();
@@ -54,6 +78,13 @@ private:
 	void InitSwapchain();
 	void SetUpDepthBuffer();
 	void SetUpUniformBuffer();
+	void CreatePipelineLayout();
+	void InitDescriptorSet();
+	void InitRenderpass();
+
+	std::array<vk::AttachmentDescription, 2> attachment_descriptions;
+
+	uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask);
 
 public:
 	VkRenderer(GLFWwindow* windowHandle);
