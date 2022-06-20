@@ -1,12 +1,17 @@
 #pragma once
 #include <iostream>
 #include <vulkan/vulkan.hpp>
+#include <glslang/SPIRV/GlslangToSpv.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include "data.h"
+#include "FileManager.h"
 
+#define GLFW_INCLUDE_NONE
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLM_FORCE_RADIANS
+
+#define TIMEOUT 100000000
 
 
 class VkRenderer
@@ -71,6 +76,26 @@ private:
 
 	vk::RenderPass render_pass;
 
+	std::array<vk::AttachmentDescription, 2> attachment_descriptions;
+
+	vk::ShaderModule vertex_shader_module;
+	vk::ShaderModule fragment_shader_module;
+
+	std::array<vk::ImageView, 2> attachments;
+	std::vector<vk::Framebuffer> framebuffers;
+
+	vk::Buffer vertex_buffer;
+	vk::DeviceMemory vertex_memory;
+
+	vk::Semaphore image_acquired_sem;
+
+	std::array<vk::ClearValue, 2> clear_values;
+
+	vk::Fence fence;
+
+	uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask);
+	void GetShader(vk::ShaderStageFlagBits const stageBits, std::string& glslShader, std::vector<uint32_t>& spvShader);
+
 	void CreateInstance();
 	void SetUpVkDevice();
 	void InitCommandBuffer();
@@ -81,12 +106,12 @@ private:
 	void CreatePipelineLayout();
 	void InitDescriptorSet();
 	void InitRenderpass();
-
-	std::array<vk::AttachmentDescription, 2> attachment_descriptions;
-
-	uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask);
+	void InitShaders();
+	void SetupFrameBuffer();
+	void SetupVertexBuffer();
 
 public:
+	void WriteCommandBuffer();
 	VkRenderer(GLFWwindow* windowHandle);
 	~VkRenderer();
 };

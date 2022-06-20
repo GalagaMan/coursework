@@ -5,12 +5,12 @@
 #include <stdexcept>
 #include <iostream>
 
-class XPipeline
+class FileManager
 {
 public:
-	XPipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+	FileManager(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+	static std::string ReadFile(const std::string& filePath);
 private:
-	static std::vector<char> ReadFile(const std::string& filePath);
 	void BuildGraphicsPipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
 };
 

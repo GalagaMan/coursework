@@ -19,6 +19,7 @@ void Run(/*const Window& window*/ )
 	if (glfwVulkanSupported())
 	{
 		VkRenderer vkd{window.window_};
+		vkd.WriteCommandBuffer();
 		while (!glfwWindowShouldClose(window.window_))
 		{
 			glfwWaitEvents();
@@ -34,17 +35,18 @@ int main()
 	}
 	catch (vk::SystemError& error)
 	{
-		std::cerr << error.what() << " " << error.code();
+		std::cerr << "vulkan system error: " << error.what() << " " << error.code();
 		return EXIT_FAILURE;
 	}
 	catch (std::exception& error)
 	{
-		std::cerr << error.what() << std::endl;
+		std::cerr << "standard error: " << error.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 	catch (...)
 	{
 		std::cerr << "unknown exception";
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }
