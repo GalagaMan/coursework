@@ -29,16 +29,4 @@ std::string FileManager::ReadFile(const std::string& filePath)
 	return data;
 }
 
-void FileManager::BuildGraphicsPipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
-{
-	auto const vertexShaderCode = ReadFile(vertexShaderPath);
-	auto const fragmentShaderCode = ReadFile(fragmentShaderPath);
 
-	std::cerr << "vert shader size: " + vertexShaderCode.size();
-	std::cerr << "frag shader size: " + fragmentShaderCode.size();
-}
-
-FileManager::FileManager(const std::string& vertexShaderPath, const std::string& fragmentShaderPath)
-{
-	BuildGraphicsPipeline(vertexShaderPath, fragmentShaderPath);
-}

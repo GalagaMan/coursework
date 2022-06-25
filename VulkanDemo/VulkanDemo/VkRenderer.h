@@ -7,12 +7,16 @@
 #include "data.h"
 #include "FileManager.h"
 
+#define GL_KHR_vulkan_glsl
 #define GLFW_INCLUDE_NONE
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLM_FORCE_RADIANS
 
 #define TIMEOUT 100000000
 
+#define _ITERATOR_DEBUG_LEVEL 0;
+
+typedef std::pair<std::list<vk::Buffer>::iterator, std::list<vk::DeviceMemory>::iterator> vertexBufferMemoryPair;
 
 class VkRenderer
 {
@@ -33,36 +37,36 @@ private:
 
 	const char* const* ExtensionNames;
 	uint32_t ExtensionCount;
-	vk::Instance m_instance;
+	vk::Instance instance;
 
-	//device related, both physical and virtual
-	ptrdiff_t m_graphics_queue_family_index;
-	vk::PhysicalDevice m_PhysDevice;
+	//logical_device related, both physical and virtual
+	ptrdiff_t graphics_queue_family_index;
+	vk::PhysicalDevice PhysDevice;
 
-	vk::PhysicalDeviceMemoryProperties m_device_memory_properties;
+	vk::PhysicalDeviceMemoryProperties device_memory_properties;
 
-	vk::Device m_device;
-	std::vector<vk::QueueFamilyProperties> m_queue_family_properties;
+	vk::Device logical_device;
+	std::vector<vk::QueueFamilyProperties> queue_family_properties;
 
-	vk::CommandPool m_command_pool;
-	vk::CommandBuffer m_command_buffer;
+	vk::CommandPool command_pool;
+	vk::CommandBuffer command_buffer;
 
-	ptrdiff_t m_available_queue_family_index;
-	vk::SurfaceCapabilitiesKHR m_surface_capabilities;
-	vk::Format m_format;
+	ptrdiff_t available_queue_family_index;
+	vk::SurfaceCapabilitiesKHR surface_capabilities;
+	vk::Format format;
 
 	//surface
-	vk::SurfaceKHR m_surface;
+	vk::SurfaceKHR surface;
 
-	std::vector<vk::ImageView> m_imageViews;
-	vk::SwapchainKHR m_swapchain;
+	std::vector<vk::ImageView> imageViews;
+	vk::SwapchainKHR swapchain;
 
-	vk::Format m_depth_format;
-	vk::ImageTiling m_image_tiling;
+	vk::Format depth_format;
+	vk::ImageTiling image_tiling;
 
-	vk::Image m_depth_image;
-	vk::DeviceMemory m_depth_mem;
-	vk::ImageView m_depth_view;
+	vk::Image depth_image;
+	vk::DeviceMemory depth_mem;
+	vk::ImageView depth_view;
 
 	vk::Buffer uniform_buffer;
 	vk::DeviceMemory uniform_memory;
@@ -87,11 +91,16 @@ private:
 	vk::Buffer vertex_buffer;
 	vk::DeviceMemory vertex_memory;
 
+	std::list<vk::Buffer> vertex_buffers;
+	std::list<vk::DeviceMemory> vertex_memory_segments;
+
 	vk::Semaphore image_acquired_sem;
 
 	std::array<vk::ClearValue, 2> clear_values;
 
 	vk::Fence fence;
+
+	vk::Pipeline pipeline;
 
 	uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask);
 	void GetShader(vk::ShaderStageFlagBits const stageBits, std::string& glslShader, std::vector<uint32_t>& spvShader);
@@ -109,9 +118,12 @@ private:
 	void InitShaders();
 	void SetupFrameBuffer();
 	void SetupVertexBuffer();
+	void BuildGraphicsPipeline();
 
 public:
-	void WriteCommandBuffer();
+	void Draw();
+	vertexBufferMemoryPair LoadMesh(Mesh const& mesh);
+	void UnloadMesh(vertexBufferMemoryPair const& buffer);
 	VkRenderer(GLFWwindow* windowHandle);
 	~VkRenderer();
 };

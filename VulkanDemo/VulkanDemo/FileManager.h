@@ -4,13 +4,15 @@
 #include <fstream>
 #include <stdexcept>
 #include <iostream>
+#include <vulkan/vulkan.hpp>
+#include "Mesh.h"
+
 
 class FileManager
 {
-public:
-	FileManager(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
-	static std::string ReadFile(const std::string& filePath);
 private:
-	void BuildGraphicsPipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+public:
+	static void LoadMesh(Mesh const& mesh, vk::Buffer const& buffer);
+	static std::string ReadFile(const std::string& filePath);
 };
 

@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <stdexcept>
+#include <future>
 #include "data.h"
 #include "VkRenderer.h"
 #include "Window.h"
@@ -12,17 +13,29 @@ bool debug = true;
 #endif
 
 
-void Run(/*const Window& window*/ )
+
+void Run()
 {
-	InitWindowData window_data{ width, height, title };	
+	InitWindowData window_data{ width, height, title };
 	Window const window(window_data);
+
 	if (glfwVulkanSupported())
 	{
-		VkRenderer vkd{window.window_};
-		vkd.WriteCommandBuffer();
-		while (!glfwWindowShouldClose(window.window_))
+		Vertex vrt{ glm::vec4{0.4, 0.3, 1., 1}, glm::vec4{0.5, -1., -0.3, 1}, glm::vec4{0.3, 0.5, 1., 1.} };
+
+		std::vector<Vertex> vcVrt;
+
+		vcVrt.emplace_back(vrt);
+		//vcVrt.emplace_back(Vertex{ glm::vec4{1, 1, 1, 1}, glm::vec4{1, 1, 1, 1} , glm::vec4{1, 1, 1, 1} });
+
+		Mesh msh{ vcVrt };
+
+		std::cout << sizeof(msh);
+		VkRenderer vkd{ window.window_ };
+		while (true)
 		{
-			glfwWaitEvents();
+			vkd.Draw();
+			glfwPollEvents();
 		}
 	}
 }
@@ -30,8 +43,9 @@ void Run(/*const Window& window*/ )
 int main()
 {
 	try
-	{
+	{	
 		Run();
+
 	}
 	catch (vk::SystemError& error)
 	{
