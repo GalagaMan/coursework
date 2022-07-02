@@ -5,7 +5,7 @@
 
 **/dependencies/**
 **/VkLogs
-*.spv
+##*.spv
 
 # User-specific files
 *.rsuser
