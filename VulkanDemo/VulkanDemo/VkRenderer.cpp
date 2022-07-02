@@ -2,7 +2,7 @@
 
 
 VkRenderer::VkRenderer(Window& window)
-	:window(window), glfwWindow(window.window_)
+	:window(window)
 {
 	CreateInstance();
 	SetUpVkDevice();
@@ -399,7 +399,7 @@ void VkRenderer::InitCommandBuffer()
 void VkRenderer::SetUpSurface()
 {
 	VkSurfaceKHR _surface;
-	VkResult const error = glfwCreateWindowSurface(instance, glfwWindow, nullptr, &_surface);
+	VkResult const error = glfwCreateWindowSurface(instance, window.window_, nullptr, &_surface);
 	if (error != VK_SUCCESS)
 		throw std::runtime_error("failed to create vulkan rendering surface");
 	surface = vk::SurfaceKHR{ _surface };

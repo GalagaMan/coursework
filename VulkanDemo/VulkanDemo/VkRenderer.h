@@ -34,7 +34,6 @@ private:
 	glm::mat4x4 mvpc = clip * proj * view * model;
 
 
-	GLFWwindow* glfwWindow;
 	Window& window;
 
 	const char* const* ExtensionNames;
