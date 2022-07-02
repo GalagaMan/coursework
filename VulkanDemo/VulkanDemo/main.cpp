@@ -16,26 +16,16 @@ bool debug = true;
 
 void Run()
 {
-	InitWindowData window_data{ width, height, title };
-	Window const window(window_data);
+	Window window(800, 800, "title");
 
 	if (glfwVulkanSupported())
 	{
-		Vertex vrt{ glm::vec4{0.4, 0.3, 1., 1}, glm::vec4{0.5, -1., -0.3, 1}, glm::vec4{0.3, 0.5, 1., 1.} };
+		VkRenderer vkd{ window };
 
-		std::vector<Vertex> vcVrt;
-
-		vcVrt.emplace_back(vrt);
-		//vcVrt.emplace_back(Vertex{ glm::vec4{1, 1, 1, 1}, glm::vec4{1, 1, 1, 1} , glm::vec4{1, 1, 1, 1} });
-
-		Mesh msh{ vcVrt };
-
-		std::cout << sizeof(msh);
-		VkRenderer vkd{ window.window_ };
-		while (!glfwWindowShouldClose(window.window_))
+		while (!window.ShouldClose())
 		{
 			vkd.Draw();
-			glfwPollEvents();
+			window.PollEvents();
 		}
 	}
 }

@@ -16,15 +16,40 @@ void Window::CreateWindow(uint32_t width, uint32_t height, const char* title)
 		glfwTerminate();
 }
 
-Window::Window(InitWindowData& window_data)
-	:window_()
+Window::Window(uint32_t width, uint32_t height, const char* title)
+	:window_(), width(width), height(height), title(title)
 {
 	CheckGlfwInit();
-	CreateWindow(window_data.width, window_data.height, window_data.title);
+	CreateWindow(width, height, title);
 }
 
 Window::~Window()
 {
 	glfwDestroyWindow(this->window_);
 	glfwTerminate();
+}
+
+bool Window::ShouldClose()
+{
+	return glfwWindowShouldClose(window_);
+}
+
+void Window::PollEvents()
+{
+	glfwPollEvents();
+}
+
+uint32_t Window::Width()
+{
+	return width;
+}
+
+uint32_t Window::Height()
+{
+	return height;
+}
+
+const char* Window::Title()
+{
+	return title;
 }

@@ -1,8 +1,8 @@
 #include "VkRenderer.h"
 
 
-VkRenderer::VkRenderer(GLFWwindow* windowHandle)
-	:window(windowHandle)
+VkRenderer::VkRenderer(Window& window)
+	:window(window), glfwWindow(window.window_)
 {
 	CreateInstance();
 	SetUpVkDevice();
@@ -260,7 +260,7 @@ void VkRenderer::Draw()
 		{
 			render_pass,
 			framebuffers[currentBuffer.value],
-			vk::Rect2D{vk::Offset2D{0,0}, vk::Extent2D{width, height}},
+			vk::Rect2D{vk::Offset2D{0,0}, vk::Extent2D{window.Width(), window.Height()}},
 			clear_values
 		};
 
@@ -271,9 +271,9 @@ void VkRenderer::Draw()
 
 		command_buffer.bindVertexBuffers(0, vertex_buffer, { 0 });
 
-		command_buffer.setViewport(0, vk::Viewport{ 0.0f, 0.0f, width, height, 0.0f, 1.0f });
+		command_buffer.setViewport(0, vk::Viewport{ 0.0f, 0.0f, static_cast<float>(window.Width()), static_cast<float>(window.Height()), 0.0f, 1.0f});
 
-		command_buffer.setScissor(0, vk::Rect2D{ vk::Offset2D{0, 0}, vk::Extent2D{width, height} });
+		command_buffer.setScissor(0, vk::Rect2D{ vk::Offset2D{0, 0}, vk::Extent2D{window.Width(), window.Height()} });
 
 		command_buffer.draw(12*3, 1, 0, 0);
 
@@ -314,7 +314,7 @@ void VkRenderer::CreateInstance()
 
 	vk::ApplicationInfo const application_info
 	{
-		title,
+		window.Title(),
 		VK_MAKE_VERSION(1, 0, 0),
 		"Vulkan",
 		VK_MAKE_VERSION(1, 0, 0),
@@ -399,7 +399,7 @@ void VkRenderer::InitCommandBuffer()
 void VkRenderer::SetUpSurface()
 {
 	VkSurfaceKHR _surface;
-	VkResult const error = glfwCreateWindowSurface(instance, window, nullptr, &_surface);
+	VkResult const error = glfwCreateWindowSurface(instance, glfwWindow, nullptr, &_surface);
 	if (error != VK_SUCCESS)
 		throw std::runtime_error("failed to create vulkan rendering surface");
 	surface = vk::SurfaceKHR{ _surface };
@@ -447,8 +447,8 @@ void VkRenderer::InitSwapchain()
 	vk::Extent2D SwapExtent;
 	if (surface_capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max())
 	{
-		SwapExtent.width = (width, surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
-		SwapExtent.height = (height, surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
+		SwapExtent.width = (window.Width(), surface_capabilities.minImageExtent.width, surface_capabilities.maxImageExtent.width);
+		SwapExtent.height = (window.Height(), surface_capabilities.minImageExtent.height, surface_capabilities.maxImageExtent.height);
 	}
 	else
 	{
@@ -540,7 +540,7 @@ void VkRenderer::SetUpDepthBuffer()
 		vk::ImageCreateFlagBits{},
 		vk::ImageType::e2D,
 		depth_format,
-		vk::Extent3D(width, height, 1),
+		vk::Extent3D(window.Width(), window.Height(), 1),
 		1,
 		1,
 		vk::SampleCountFlagBits::e1,
@@ -721,8 +721,8 @@ void VkRenderer::SetupFrameBuffer()
 		vk::FramebufferCreateFlags{},
 		render_pass,
 		attachments,
-		width,
-		height,
+		window.Width(),
+		window.Height(),
 		1
 	};
 

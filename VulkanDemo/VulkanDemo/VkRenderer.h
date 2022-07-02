@@ -4,6 +4,7 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
+#include "Window.h"
 #include "data.h"
 #include "FileManager.h"
 
@@ -33,7 +34,8 @@ private:
 	glm::mat4x4 mvpc = clip * proj * view * model;
 
 
-	GLFWwindow* window;
+	GLFWwindow* glfwWindow;
+	Window& window;
 
 	const char* const* ExtensionNames;
 	uint32_t ExtensionCount;
@@ -125,6 +127,6 @@ public:
 	void Draw();
 	vertexBufferMemoryPair LoadMesh(Mesh const& mesh);
 	void UnloadMesh(vertexBufferMemoryPair const& buffer);
-	VkRenderer(GLFWwindow* windowHandle);
+	VkRenderer(Window&);
 	~VkRenderer();
 };

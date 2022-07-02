@@ -3,9 +3,7 @@
 #include <glm.hpp>
 #include <ext.hpp>
 
-constexpr uint32_t width{ 800 };
-constexpr uint32_t height{ 800 };
-constexpr const char* title{ "Vulkan 1.3 Demo" };
+
 
 struct VertexPC
 {
