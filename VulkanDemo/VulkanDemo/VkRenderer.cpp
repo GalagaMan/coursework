@@ -18,15 +18,25 @@ VkRenderer::VkRenderer(GLFWwindow* windowHandle)
 	SetupFrameBuffer();
 	SetupVertexBuffer();
 	BuildGraphicsPipeline();
+	//std::cerr << PhysDevice.getProperties().limits.maxBoundDescriptorSets << "maxBoundDescriptorSets "<< "\n";
+	//std::cerr << PhysDevice.getProperties().limits.maxVertexInputBindings << "maxVertexInputBindings" << "\n";
+	//std::cerr << PhysDevice.getProperties().limits.maxMemoryAllocationCount << "maxMemoryAllocationCount" << "\n";
+	//std::cerr << PhysDevice.getProperties().limits.maxDescriptorSetUniformBuffers << "maxDescriptorSetUniformBuffers" << "\n";
+	//std::cerr << PhysDevice.getProperties().limits.maxFramebufferWidth << "maxFramebufferWidth" << "\n";
+	image_acquired_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
+	image_has_finished_rendering_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
+	fence = logical_device.createFence(vk::FenceCreateInfo{});
 }
 
 VkRenderer::~VkRenderer()
 {
 	logical_device.destroyPipeline(pipeline);
-	//logical_device.destroy(fence);
-	//logical_device.destroySemaphore(image_acquired_sem);
+	logical_device.destroy(fence);
+	logical_device.destroySemaphore(image_acquired_sem);
+	logical_device.destroySemaphore(image_has_finished_rendering_sem);
 	logical_device.freeMemory(vertex_memory);
 	logical_device.destroyBuffer(vertex_buffer);
+
 	for (auto const& frameBuffer : framebuffers)
 	{
 		logical_device.destroyFramebuffer(frameBuffer);
@@ -229,15 +239,19 @@ void VkRenderer::GetShader(vk::ShaderStageFlagBits const stageBits, std::string&
 
 void VkRenderer::Draw()
 {
-	image_acquired_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
+	
 	vk::ResultValue<uint32_t> currentBuffer = logical_device.acquireNextImageKHR(swapchain, TIMEOUT, image_acquired_sem, nullptr);
 	assert(currentBuffer.result == vk::Result::eSuccess);
 	assert(currentBuffer.value < framebuffers.size());
 
+
 	clear_values[0].color = vk::ClearColorValue(std::array<float, 4>({ {0.2f, 0.2f, 0.2f, 0.2f} }));
 	clear_values[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
+
 	auto const queue = logical_device.getQueue(graphics_queue_family_index, available_queue_family_index);
+
+	
 	do
 	{
 		command_buffer.begin(vk::CommandBufferBeginInfo{ vk::CommandBufferUsageFlags{} });
@@ -266,7 +280,6 @@ void VkRenderer::Draw()
 		command_buffer.endRenderPass();
 		command_buffer.end();
 
-		fence = logical_device.createFence(vk::FenceCreateInfo{});
 
 		vk::PipelineStageFlags waitDestinationStageMask{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
 		vk::SubmitInfo submitionInfo{ image_acquired_sem, waitDestinationStageMask, command_buffer };
@@ -277,7 +290,7 @@ void VkRenderer::Draw()
 	}
 	while (vk::Result::eTimeout == logical_device.waitForFences(fence, VK_TRUE, TIMEOUT));
 
-	vk::Result result = queue.presentKHR(vk::PresentInfoKHR{ {}, swapchain, currentBuffer.value });
+	vk::Result result = queue.presentKHR(vk::PresentInfoKHR{ image_has_finished_rendering_sem, swapchain, currentBuffer.value });
 	switch (result)
 	{
 	case vk::Result::eSuccess:
@@ -287,8 +300,8 @@ void VkRenderer::Draw()
 		break;
 	}
 
-	logical_device.destroyFence(fence);
-	logical_device.destroySemaphore(image_acquired_sem);
+	logical_device.resetFences(fence);
+	//logical_device.destroySemaphore(image_acquired_sem);
 
 	logical_device.waitIdle();
 }
@@ -442,7 +455,7 @@ void VkRenderer::InitSwapchain()
 		SwapExtent = surface_capabilities.currentExtent;
 	}
 
-	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eFifoRelaxed;
+	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eImmediate;
 
 	vk::SurfaceTransformFlagBitsKHR const precedingTransformation = (surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		? vk::SurfaceTransformFlagBitsKHR::eIdentity
@@ -752,7 +765,7 @@ void VkRenderer::BuildGraphicsPipeline()
 	std::array<vk::VertexInputAttributeDescription, 2> vertexInputAttributeDescriptions
 	{
 		vk::VertexInputAttributeDescription{0, 0, vk::Format::eR32G32B32A32Sfloat, 0},
-		vk::VertexInputAttributeDescription{1, 1, vk::Format::eR32G32B32A32Sfloat, sizeof(coloredCubeData[0].a)*4}
+		vk::VertexInputAttributeDescription{1, 0, vk::Format::eR32G32B32A32Sfloat, sizeof(coloredCubeData[0].a)*4}
 	};
 
 	vk::PipelineVertexInputStateCreateInfo pipelineVertexInputStateInfo{ vk::PipelineVertexInputStateCreateFlags{}, vertexInputBindingDescription, vertexInputAttributeDescriptions };
@@ -768,7 +781,7 @@ void VkRenderer::BuildGraphicsPipeline()
 		VK_FALSE,
 		vk::PolygonMode::eFill,
 		vk::CullModeFlagBits::eBack,
-		vk::FrontFace::eCounterClockwise,
+		vk::FrontFace::eClockwise,
 		false,
 		0.0f,
 		0.0f,
@@ -850,9 +863,6 @@ void VkRenderer::BuildGraphicsPipeline()
 		break;
 	default: throw std::runtime_error{ "pipeline could not be created" };
 	}
-
-
-	
 }
 
 

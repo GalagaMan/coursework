@@ -14,16 +14,16 @@
 
 #define TIMEOUT 100000000
 
-#define _ITERATOR_DEBUG_LEVEL 0;
 
 typedef std::pair<std::list<vk::Buffer>::iterator, std::list<vk::DeviceMemory>::iterator> vertexBufferMemoryPair;
 
 class VkRenderer
 {
 private:
-	glm::mat4x4 model{ glm::mat4x4(1.0f) };
+	glm::mat4x4 model{ glm::mat4x4{1} };
 	glm::mat4x4 view{ glm::lookAt(glm::vec3{-5.0f, 3.0f, -10.0f}, glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, -1.0f, 0.0f}) };
 	glm::mat4x4 proj = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+	//glm::mat4x4 proj = glm::ortho(-3, 3, -3, 3);
 
 	glm::mat4x4 clip = glm::mat4x4{ 1.0f, 0.0f, 0.0f, 0.0f,
 						0.0f, -1.0f, 0.0f, 0.0f,
@@ -95,6 +95,7 @@ private:
 	std::list<vk::DeviceMemory> vertex_memory_segments;
 
 	vk::Semaphore image_acquired_sem;
+	vk::Semaphore image_has_finished_rendering_sem;
 
 	std::array<vk::ClearValue, 2> clear_values;
 

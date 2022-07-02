@@ -21,7 +21,6 @@ Mesh::Mesh(std::vector<Vertex> vertices)
 
 }
 
-
 Mesh::Mesh(const Mesh& mesh)
 {
 	vertices = mesh.vertices;

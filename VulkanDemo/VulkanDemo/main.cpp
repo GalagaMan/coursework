@@ -32,7 +32,7 @@ void Run()
 
 		std::cout << sizeof(msh);
 		VkRenderer vkd{ window.window_ };
-		while (true)
+		while (!glfwWindowShouldClose(window.window_))
 		{
 			vkd.Draw();
 			glfwPollEvents();
@@ -45,7 +45,6 @@ int main()
 	try
 	{	
 		Run();
-
 	}
 	catch (vk::SystemError& error)
 	{
