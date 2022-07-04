@@ -73,6 +73,7 @@
     <None Include="compile.bat">
       <Filter>shader</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="VulkanDemo.rc">

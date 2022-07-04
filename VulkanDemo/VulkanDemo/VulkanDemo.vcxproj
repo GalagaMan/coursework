@@ -173,7 +173,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <Optimization>Custom</Optimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalOptions>/Ofast /MDd %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/Ofast %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(SolutionDir)\dependencies\1.3.204.1\Include;$(SolutionDir)\dependencies\glfw-3.3.6\include;$(SolutionDir)\dependencies\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -185,7 +185,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)\dependencies\1.3.204.1\Lib\;$(SolutionDir)\dependencies\glfw-3.3.6\lib-vc2022\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;OGLCompilerd.lib;shaderc_combinedd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;OGLCompiler.lib;shaderc_combined.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Linux|x64'">
@@ -243,6 +243,7 @@
     <ClInclude Include="FileManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="compile.bat" />
     <None Include="smp_fragment_shader.frag" />
     <None Include="smp_vertex_shader.vert" />

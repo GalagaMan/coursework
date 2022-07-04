@@ -89,110 +89,110 @@ void VkRenderer::GetShader(vk::ShaderStageFlagBits const stageBits, std::string&
 {
 	std::cerr << "compiling shader " << vk::to_string(stageBits) << "\n";
 
-	TBuiltInResource defaultRessource;
+	TBuiltInResource defaultResource;
 
-	defaultRessource.maxLights = 32;
-	defaultRessource.maxClipPlanes = 6;
-	defaultRessource.maxTextureUnits = 32;
-	defaultRessource.maxTextureCoords = 32;
-	defaultRessource.maxVertexAttribs = 64;
-	defaultRessource.maxVertexUniformComponents = 4096;
-	defaultRessource.maxVaryingFloats = 64;
-	defaultRessource.maxVertexTextureImageUnits = 32;
-	defaultRessource.maxCombinedTextureImageUnits = 80;
-	defaultRessource.maxTextureImageUnits = 32;
-	defaultRessource.maxFragmentUniformComponents = 4096;
-	defaultRessource.maxDrawBuffers = 32;
-	defaultRessource.maxVertexUniformVectors = 128;
-	defaultRessource.maxVaryingVectors = 8;
-	defaultRessource.maxFragmentUniformVectors = 16;
-	defaultRessource.maxVertexOutputVectors = 16;
-	defaultRessource.maxFragmentInputVectors = 15;
-	defaultRessource.minProgramTexelOffset = -8;
-	defaultRessource.maxProgramTexelOffset = 7;
-	defaultRessource.maxClipDistances = 8;
-	defaultRessource.maxComputeWorkGroupCountX = 65535;
-	defaultRessource.maxComputeWorkGroupCountY = 65535;
-	defaultRessource.maxComputeWorkGroupCountZ = 65535;
-	defaultRessource.maxComputeWorkGroupSizeX = 1024;
-	defaultRessource.maxComputeWorkGroupSizeY = 1024;
-	defaultRessource.maxComputeWorkGroupSizeZ = 64;
-	defaultRessource.maxComputeUniformComponents = 1024;
-	defaultRessource.maxComputeTextureImageUnits = 16;
-	defaultRessource.maxComputeImageUniforms = 8;
-	defaultRessource.maxComputeAtomicCounters = 8;
-	defaultRessource.maxComputeAtomicCounterBuffers = 1;
-	defaultRessource.maxVaryingComponents = 60;
-	defaultRessource.maxVertexOutputComponents = 64;
-	defaultRessource.maxGeometryInputComponents = 64;
-	defaultRessource.maxGeometryOutputComponents = 128;
-	defaultRessource.maxFragmentInputComponents = 128;
-	defaultRessource.maxImageUnits = 8;
-	defaultRessource.maxCombinedImageUnitsAndFragmentOutputs = 8;
-	defaultRessource.maxCombinedShaderOutputResources = 8;
-	defaultRessource.maxImageSamples = 0;
-	defaultRessource.maxVertexImageUniforms = 0;
-	defaultRessource.maxTessControlImageUniforms = 0;
-	defaultRessource.maxTessEvaluationImageUniforms = 0;
-	defaultRessource.maxGeometryImageUniforms = 0;
-	defaultRessource.maxFragmentImageUniforms = 8;
-	defaultRessource.maxCombinedImageUniforms = 8;
-	defaultRessource.maxGeometryTextureImageUnits = 16;
-	defaultRessource.maxGeometryOutputVertices = 256;
-	defaultRessource.maxGeometryTotalOutputComponents = 1024;
-	defaultRessource.maxGeometryUniformComponents = 1024;
-	defaultRessource.maxGeometryVaryingComponents = 64;
-	defaultRessource.maxTessControlInputComponents = 128;
-	defaultRessource.maxTessControlOutputComponents = 128;
-	defaultRessource.maxTessControlTextureImageUnits = 16;
-	defaultRessource.maxTessControlUniformComponents = 1024;
-	defaultRessource.maxTessControlTotalOutputComponents = 4096;
-	defaultRessource.maxTessEvaluationInputComponents = 128;
-	defaultRessource.maxTessEvaluationOutputComponents = 128;
-	defaultRessource.maxTessEvaluationTextureImageUnits = 16;
-	defaultRessource.maxTessEvaluationUniformComponents = 1024;
-	defaultRessource.maxTessPatchComponents = 120;
-	defaultRessource.maxPatchVertices = 32;
-	defaultRessource.maxTessGenLevel = 64;
-	defaultRessource.maxViewports = 16;
-	defaultRessource.maxVertexAtomicCounters = 0;
-	defaultRessource.maxTessControlAtomicCounters = 0;
-	defaultRessource.maxTessEvaluationAtomicCounters = 0;
-	defaultRessource.maxGeometryAtomicCounters = 0;
-	defaultRessource.maxFragmentAtomicCounters = 8;
-	defaultRessource.maxCombinedAtomicCounters = 8;
-	defaultRessource.maxAtomicCounterBindings = 1;
-	defaultRessource.maxVertexAtomicCounterBuffers = 0;
-	defaultRessource.maxTessControlAtomicCounterBuffers = 0;
-	defaultRessource.maxTessEvaluationAtomicCounterBuffers = 0;
-	defaultRessource.maxGeometryAtomicCounterBuffers = 0;
-	defaultRessource.maxFragmentAtomicCounterBuffers = 1;
-	defaultRessource.maxCombinedAtomicCounterBuffers = 1;
-	defaultRessource.maxAtomicCounterBufferSize = 16384;
-	defaultRessource.maxTransformFeedbackBuffers = 4;
-	defaultRessource.maxTransformFeedbackInterleavedComponents = 64;
-	defaultRessource.maxCullDistances = 8;
-	defaultRessource.maxCombinedClipAndCullDistances = 8;
-	defaultRessource.maxSamples = 4;
-	defaultRessource.maxMeshOutputVerticesNV = 256;
-	defaultRessource.maxMeshOutputPrimitivesNV = 512;
-	defaultRessource.maxMeshWorkGroupSizeX_NV = 32;
-	defaultRessource.maxMeshWorkGroupSizeY_NV = 1;
-	defaultRessource.maxMeshWorkGroupSizeZ_NV = 1;
-	defaultRessource.maxTaskWorkGroupSizeX_NV = 32;
-	defaultRessource.maxTaskWorkGroupSizeY_NV = 1;
-	defaultRessource.maxTaskWorkGroupSizeZ_NV = 1;
-	defaultRessource.maxMeshViewCountNV = 4;
+	defaultResource.maxLights = 32;
+	defaultResource.maxClipPlanes = 6;
+	defaultResource.maxTextureUnits = 32;
+	defaultResource.maxTextureCoords = 32;
+	defaultResource.maxVertexAttribs = 64;
+	defaultResource.maxVertexUniformComponents = 4096;
+	defaultResource.maxVaryingFloats = 64;
+	defaultResource.maxVertexTextureImageUnits = 32;
+	defaultResource.maxCombinedTextureImageUnits = 80;
+	defaultResource.maxTextureImageUnits = 32;
+	defaultResource.maxFragmentUniformComponents = 4096;
+	defaultResource.maxDrawBuffers = 32;
+	defaultResource.maxVertexUniformVectors = 128;
+	defaultResource.maxVaryingVectors = 8;
+	defaultResource.maxFragmentUniformVectors = 16;
+	defaultResource.maxVertexOutputVectors = 16;
+	defaultResource.maxFragmentInputVectors = 15;
+	defaultResource.minProgramTexelOffset = -8;
+	defaultResource.maxProgramTexelOffset = 7;
+	defaultResource.maxClipDistances = 8;
+	defaultResource.maxComputeWorkGroupCountX = 65535;
+	defaultResource.maxComputeWorkGroupCountY = 65535;
+	defaultResource.maxComputeWorkGroupCountZ = 65535;
+	defaultResource.maxComputeWorkGroupSizeX = 1024;
+	defaultResource.maxComputeWorkGroupSizeY = 1024;
+	defaultResource.maxComputeWorkGroupSizeZ = 64;
+	defaultResource.maxComputeUniformComponents = 1024;
+	defaultResource.maxComputeTextureImageUnits = 16;
+	defaultResource.maxComputeImageUniforms = 8;
+	defaultResource.maxComputeAtomicCounters = 8;
+	defaultResource.maxComputeAtomicCounterBuffers = 1;
+	defaultResource.maxVaryingComponents = 60;
+	defaultResource.maxVertexOutputComponents = 64;
+	defaultResource.maxGeometryInputComponents = 64;
+	defaultResource.maxGeometryOutputComponents = 128;
+	defaultResource.maxFragmentInputComponents = 128;
+	defaultResource.maxImageUnits = 8;
+	defaultResource.maxCombinedImageUnitsAndFragmentOutputs = 8;
+	defaultResource.maxCombinedShaderOutputResources = 8;
+	defaultResource.maxImageSamples = 0;
+	defaultResource.maxVertexImageUniforms = 0;
+	defaultResource.maxTessControlImageUniforms = 0;
+	defaultResource.maxTessEvaluationImageUniforms = 0;
+	defaultResource.maxGeometryImageUniforms = 0;
+	defaultResource.maxFragmentImageUniforms = 8;
+	defaultResource.maxCombinedImageUniforms = 8;
+	defaultResource.maxGeometryTextureImageUnits = 16;
+	defaultResource.maxGeometryOutputVertices = 256;
+	defaultResource.maxGeometryTotalOutputComponents = 1024;
+	defaultResource.maxGeometryUniformComponents = 1024;
+	defaultResource.maxGeometryVaryingComponents = 64;
+	defaultResource.maxTessControlInputComponents = 128;
+	defaultResource.maxTessControlOutputComponents = 128;
+	defaultResource.maxTessControlTextureImageUnits = 16;
+	defaultResource.maxTessControlUniformComponents = 1024;
+	defaultResource.maxTessControlTotalOutputComponents = 4096;
+	defaultResource.maxTessEvaluationInputComponents = 128;
+	defaultResource.maxTessEvaluationOutputComponents = 128;
+	defaultResource.maxTessEvaluationTextureImageUnits = 16;
+	defaultResource.maxTessEvaluationUniformComponents = 1024;
+	defaultResource.maxTessPatchComponents = 120;
+	defaultResource.maxPatchVertices = 32;
+	defaultResource.maxTessGenLevel = 64;
+	defaultResource.maxViewports = 16;
+	defaultResource.maxVertexAtomicCounters = 0;
+	defaultResource.maxTessControlAtomicCounters = 0;
+	defaultResource.maxTessEvaluationAtomicCounters = 0;
+	defaultResource.maxGeometryAtomicCounters = 0;
+	defaultResource.maxFragmentAtomicCounters = 8;
+	defaultResource.maxCombinedAtomicCounters = 8;
+	defaultResource.maxAtomicCounterBindings = 1;
+	defaultResource.maxVertexAtomicCounterBuffers = 0;
+	defaultResource.maxTessControlAtomicCounterBuffers = 0;
+	defaultResource.maxTessEvaluationAtomicCounterBuffers = 0;
+	defaultResource.maxGeometryAtomicCounterBuffers = 0;
+	defaultResource.maxFragmentAtomicCounterBuffers = 1;
+	defaultResource.maxCombinedAtomicCounterBuffers = 1;
+	defaultResource.maxAtomicCounterBufferSize = 16384;
+	defaultResource.maxTransformFeedbackBuffers = 4;
+	defaultResource.maxTransformFeedbackInterleavedComponents = 64;
+	defaultResource.maxCullDistances = 8;
+	defaultResource.maxCombinedClipAndCullDistances = 8;
+	defaultResource.maxSamples = 4;
+	defaultResource.maxMeshOutputVerticesNV = 256;
+	defaultResource.maxMeshOutputPrimitivesNV = 512;
+	defaultResource.maxMeshWorkGroupSizeX_NV = 32;
+	defaultResource.maxMeshWorkGroupSizeY_NV = 1;
+	defaultResource.maxMeshWorkGroupSizeZ_NV = 1;
+	defaultResource.maxTaskWorkGroupSizeX_NV = 32;
+	defaultResource.maxTaskWorkGroupSizeY_NV = 1;
+	defaultResource.maxTaskWorkGroupSizeZ_NV = 1;
+	defaultResource.maxMeshViewCountNV = 4;
 
-	defaultRessource.limits.nonInductiveForLoops = 1;
-	defaultRessource.limits.whileLoops = 1;
-	defaultRessource.limits.doWhileLoops = 1;
-	defaultRessource.limits.generalUniformIndexing = 1;
-	defaultRessource.limits.generalAttributeMatrixVectorIndexing = 1;
-	defaultRessource.limits.generalVaryingIndexing = 1;
-	defaultRessource.limits.generalSamplerIndexing = 1;
-	defaultRessource.limits.generalVariableIndexing = 1;
-	defaultRessource.limits.generalConstantMatrixVectorIndexing = 1;
+	defaultResource.limits.nonInductiveForLoops = 1;
+	defaultResource.limits.whileLoops = 1;
+	defaultResource.limits.doWhileLoops = 1;
+	defaultResource.limits.generalUniformIndexing = 1;
+	defaultResource.limits.generalAttributeMatrixVectorIndexing = 1;
+	defaultResource.limits.generalVaryingIndexing = 1;
+	defaultResource.limits.generalSamplerIndexing = 1;
+	defaultResource.limits.generalVariableIndexing = 1;
+	defaultResource.limits.generalConstantMatrixVectorIndexing = 1;
 
 	EShLanguage translation{};
 	switch (stageBits)
@@ -214,7 +214,7 @@ void VkRenderer::GetShader(vk::ShaderStageFlagBits const stageBits, std::string&
 
 	auto messages = static_cast<EShMessages>(EShMsgSpvRules | EShMsgVulkanRules);
 
-	if (!shader.parse(&defaultRessource, 400, false, messages))
+	if (!shader.parse(&defaultResource, 400, false, messages))
 	{
 		puts(shader.getInfoLog());
 		puts(shader.getInfoDebugLog());
@@ -455,7 +455,7 @@ void VkRenderer::InitSwapchain()
 		SwapExtent = surface_capabilities.currentExtent;
 	}
 
-	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eImmediate;
+	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eFifoRelaxed;
 
 	vk::SurfaceTransformFlagBitsKHR const precedingTransformation = (surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		? vk::SurfaceTransformFlagBitsKHR::eIdentity
@@ -604,9 +604,8 @@ void VkRenderer::CreatePipelineLayout()
 	vk::DescriptorSetLayoutBinding descriptorBinding
 	{
 		{},
-		vk::DescriptorType::eUniformBuffer, 2,
+		vk::DescriptorType::eUniformBuffer, 1,
 		vk::ShaderStageFlagBits::eVertex,
-	
 	};
 
 	//std::array<vk::DescriptorSetLayoutBinding, 2> descriptorSetLayoutBinding

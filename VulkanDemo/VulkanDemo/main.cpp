@@ -16,7 +16,7 @@ bool debug = true;
 
 void Run()
 {
-	Window window(800, 800, "title");
+	Window window(800, 800, "Vulkan Demo");
 
 	if (glfwVulkanSupported())
 	{

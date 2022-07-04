@@ -7,7 +7,7 @@ layout (location = 0) out vec4 outColor;
 
 void main()
 {
-	outColor = vec4(inColor.rgb, 0.2);
+	outColor = inColor.rgba;
 }
 
 //layout (location = 1) in vec4 in_color;
