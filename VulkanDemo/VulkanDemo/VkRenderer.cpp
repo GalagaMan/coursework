@@ -334,15 +334,23 @@ void VkRenderer::CreateInstance()
 	std::cerr << "instance created successfully\n";
 }
 
-vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::QueueFlagBits queueBits, std::vector<float_t>&& priorities)
+vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::QueueFlagBits queueBits, float_t priority)
 {
-	auto queueFamilyProperties = device.getQueueFamilyProperties();
-	auto const propertyIterator = std::find_if(queueFamilyProperties.begin(),
-		queueFamilyProperties.end(), [queueBits](vk::QueueFamilyProperties const& queue_family_properties)
-		{return queue_family_properties.queueFlags & queueBits; });
-	auto graphicsQueueFamilyIndex = std::distance(queueFamilyProperties.begin(), propertyIterator);
+	if(queue_families.size() == 0)
+	{
+		auto queueFamilyProperties = device.getQueueFamilyProperties();
+		for (auto queue_family_property : queueFamilyProperties)
+		{
+			queue_families.emplace_back(QueueFamily{queue_family_property.queueCount, queue_family_property.queueFlags});
+		}
+	}
+	auto const propertyIterator = std::find_if(queue_families.begin(),
+		queue_families.end(), [queueBits](QueueFamily const& queueFamily)
+		{return queueFamily.queue_bits & queueBits && queueFamily.free_queue_count > 0; });
+	auto queueFamilyIndex = std::distance(queue_families.begin(), propertyIterator);
+	queue_families[queueFamilyIndex].free_queue_count--;
 
-	return vk::DeviceQueueCreateInfo{ vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphicsQueueFamilyIndex), priorities };
+	return vk::DeviceQueueCreateInfo{ vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(queueFamilyIndex), 1, &priority };
 }
 
 void VkRenderer::SetUpVkDevice()
@@ -372,13 +380,15 @@ void VkRenderer::SetUpVkDevice()
 
 	deviceExtensions.emplace_back("VK_KHR_swapchain");
 
-	std::vector<vk::DeviceQueueCreateInfo> queueInfo;
-	queueInfo.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, { 0.0f }));
+	std::vector<vk::DeviceQueueCreateInfo> queueInfos;
+	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, 0.f));
+	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, 0.1f));
+	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eTransfer, 0.2f));
 
 	vk::DeviceCreateInfo const deviceInfo
 	{
 		vk::DeviceCreateFlags(),
-		queueInfo,
+		queueInfos,
 		{},
 		deviceExtensions
 	};

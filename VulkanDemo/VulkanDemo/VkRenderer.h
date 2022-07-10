@@ -7,6 +7,7 @@
 #include "Window.h"
 #include "data.h"
 #include "FileManager.h"
+#include "Queue.h"
 
 #define GL_KHR_vulkan_glsl
 #define GLFW_INCLUDE_NONE
@@ -43,12 +44,14 @@ private:
 	ptrdiff_t graphics_queue_family_index;
 	vk::PhysicalDevice PhysDevice;
 
-	vk::DeviceQueueCreateInfo FindQueue(vk::PhysicalDevice& device, vk::QueueFlagBits queueBits, std::vector<float_t>&& priorities);
+	vk::DeviceQueueCreateInfo FindQueue(vk::PhysicalDevice& device, vk::QueueFlagBits queueBits, float_t priority);
 
 	vk::PhysicalDeviceMemoryProperties device_memory_properties;
 
 	vk::Device logical_device;
 	std::vector<vk::QueueFamilyProperties> queue_family_properties;
+
+	std::vector<QueueFamily> queue_families;
 
 	vk::CommandPool command_pool;
 	vk::CommandBuffer command_buffer;
