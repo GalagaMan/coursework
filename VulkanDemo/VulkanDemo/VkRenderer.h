@@ -16,12 +16,12 @@
 
 #define TIMEOUT 100000000
 
-
 typedef std::pair<std::list<vk::Buffer>::iterator, std::list<vk::DeviceMemory>::iterator> vertexBufferMemoryPair;
 
 class VkRenderer
 {
 private:
+
 	glm::mat4x4 model{ glm::mat4x4{1} };
 	glm::mat4x4 view{ glm::lookAt(glm::vec3{-5.0f, 3.0f, -10.0f}, glm::vec3{0.0f, 0.0f, 0.0f}, glm::vec3{0.0f, -1.0f, 0.0f}) };
 	glm::mat4x4 proj = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
@@ -42,7 +42,7 @@ private:
 	vk::Instance instance;
 
 	ptrdiff_t graphics_queue_family_index;
-	vk::PhysicalDevice PhysDevice;
+	vk::PhysicalDevice physical_device;
 
 	vk::DeviceQueueCreateInfo FindQueue(vk::PhysicalDevice& device, vk::QueueFlagBits queueBits, float_t priority);
 
@@ -110,6 +110,7 @@ private:
 
 	uint32_t FindMemoryType(vk::PhysicalDeviceMemoryProperties const& memProperties, uint32_t typeBits, vk::MemoryPropertyFlags requiredBitmask);
 	void GetShader(vk::ShaderStageFlagBits const stageBits, std::string& glslShader, std::vector<uint32_t>& spvShader);
+
 
 	void CreateInstance();
 	void SetUpVkDevice();

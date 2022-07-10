@@ -18,11 +18,11 @@ VkRenderer::VkRenderer(Window& window)
 	SetupFrameBuffer();
 	SetupVertexBuffer();
 	BuildGraphicsPipeline();
-	//std::cerr << PhysDevice.getProperties().limits.maxBoundDescriptorSets << "maxBoundDescriptorSets "<< "\n";
-	//std::cerr << PhysDevice.getProperties().limits.maxVertexInputBindings << "maxVertexInputBindings" << "\n";
-	//std::cerr << PhysDevice.getProperties().limits.maxMemoryAllocationCount << "maxMemoryAllocationCount" << "\n";
-	//std::cerr << PhysDevice.getProperties().limits.maxDescriptorSetUniformBuffers << "maxDescriptorSetUniformBuffers" << "\n";
-	//std::cerr << PhysDevice.getProperties().limits.maxFramebufferWidth << "maxFramebufferWidth" << "\n";
+	//std::cerr << physical_device.getProperties().limits.maxBoundDescriptorSets << "maxBoundDescriptorSets "<< "\n";
+	//std::cerr << physical_device.getProperties().limits.maxVertexInputBindings << "maxVertexInputBindings" << "\n";
+	//std::cerr << physical_device.getProperties().limits.maxMemoryAllocationCount << "maxMemoryAllocationCount" << "\n";
+	//std::cerr << physical_device.getProperties().limits.maxDescriptorSetUniformBuffers << "maxDescriptorSetUniformBuffers" << "\n";
+	//std::cerr << physical_device.getProperties().limits.maxFramebufferWidth << "maxFramebufferWidth" << "\n";
 	image_acquired_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
 	image_has_finished_rendering_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
 	fence = logical_device.createFence(vk::FenceCreateInfo{});
@@ -334,9 +334,12 @@ void VkRenderer::CreateInstance()
 	std::cerr << "instance created successfully\n";
 }
 
+	
+
 vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::QueueFlagBits queueBits, float_t priority)
 {
-	if(queue_families.size() == 0)
+	
+	if(queue_families.empty())
 	{
 		auto queueFamilyProperties = device.getQueueFamilyProperties();
 		for (auto queue_family_property : queueFamilyProperties)
@@ -347,6 +350,8 @@ vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::Q
 	auto const propertyIterator = std::find_if(queue_families.begin(),
 		queue_families.end(), [queueBits](QueueFamily const& queueFamily)
 		{return queueFamily.queue_bits & queueBits && queueFamily.free_queue_count > 0; });
+	if (propertyIterator == queue_families.end())
+		throw std::runtime_error("cannot create more queues than supported or create unsupported queue");
 	auto queueFamilyIndex = std::distance(queue_families.begin(), propertyIterator);
 	queue_families[queueFamilyIndex].free_queue_count--;
 
@@ -355,11 +360,11 @@ vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::Q
 
 void VkRenderer::SetUpVkDevice()
 {
-	PhysDevice = instance.enumeratePhysicalDevices().back();
+	physical_device = instance.enumeratePhysicalDevices().back();
 
-	//queue_family_properties = PhysDevice.getQueueFamilyProperties();
+	//queue_family_properties = physical_device.getQueueFamilyProperties();
 	//
-	//for (auto queueprops : PhysDevice.getQueueFamilyProperties())
+	//for (auto queueprops : physical_device.getQueueFamilyProperties())
 	//{
 	//	std::cerr << to_string(queueprops.queueFlags) << " " << queueprops.queueCount << "\n";
 	//}
@@ -374,16 +379,16 @@ void VkRenderer::SetUpVkDevice()
 	//constexpr float_t qPriority = 0.0f;
 	//vk::DeviceQueueCreateInfo DeviceQueueInfo{vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphics_queue_family_index), 1, &qPriority};
 
-	auto const deviceExtensionProperties = PhysDevice.enumerateDeviceExtensionProperties();
+	auto const deviceExtensionProperties = physical_device.enumerateDeviceExtensionProperties();
 
 	std::vector<const char*> deviceExtensions{};
 
 	deviceExtensions.emplace_back("VK_KHR_swapchain");
 
 	std::vector<vk::DeviceQueueCreateInfo> queueInfos;
-	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, 0.f));
-	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, 0.1f));
-	queueInfos.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eTransfer, 0.2f));
+	queueInfos.emplace_back(FindQueue(physical_device, vk::QueueFlagBits::eGraphics, 0.f));
+	queueInfos.emplace_back(FindQueue(physical_device, vk::QueueFlagBits::eGraphics, 0.f));
+	queueInfos.emplace_back(FindQueue(physical_device, vk::QueueFlagBits::eTransfer, 0.f));
 
 	vk::DeviceCreateInfo const deviceInfo
 	{
@@ -393,10 +398,10 @@ void VkRenderer::SetUpVkDevice()
 		deviceExtensions
 	};
 
-	logical_device = PhysDevice.createDevice(deviceInfo);
+	logical_device = physical_device.createDevice(deviceInfo);
 
-	std::cerr << "video adapter utilized: " << PhysDevice.getProperties().deviceName << " " << to_string(PhysDevice.getProperties().deviceType) << "\n";
-	//auto const prer = PhysDevice.enumerateDeviceExtensionProperties();
+	std::cerr << "video adapter utilized: " << physical_device.getProperties().deviceName << " " << to_string(physical_device.getProperties().deviceType) << "\n";
+	//auto const prer = physical_device.enumerateDeviceExtensionProperties();
 	//for (auto extension_properties : prer)
 	//{
 	//	for (auto const extensionChar : extension_properties.extensionName)
@@ -426,13 +431,13 @@ void VkRenderer::SetUpSurface()
 		throw std::runtime_error("failed to create vulkan rendering surface");
 	surface = vk::SurfaceKHR{ _surface };
 
-	available_queue_family_index = PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(graphics_queue_family_index), surface)
+	available_queue_family_index = physical_device.getSurfaceSupportKHR(static_cast<uint32_t>(graphics_queue_family_index), surface)
 	? graphics_queue_family_index : queue_family_properties.size();
 	if (available_queue_family_index == queue_family_properties.size())
 	{
 		for(size_t i{0}; i < queue_family_properties.size(); i++)
 		{
-			if ((queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) && PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
+			if ((queue_family_properties[i].queueFlags & vk::QueueFlagBits::eGraphics) && physical_device.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
 			{
 				graphics_queue_family_index = static_cast<uint32_t>(i);
 				available_queue_family_index = static_cast<uint32_t>(i);
@@ -444,7 +449,7 @@ void VkRenderer::SetUpSurface()
 	{
 		for(size_t i{0}; i < queue_family_properties.size(); i++)
 		{
-			if (PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
+			if (physical_device.getSurfaceSupportKHR(static_cast<uint32_t>(i), surface))
 			{
 				available_queue_family_index = static_cast<uint32_t>(i);
 				break;
@@ -454,12 +459,12 @@ void VkRenderer::SetUpSurface()
 	if ((graphics_queue_family_index == queue_family_properties.size()) || (available_queue_family_index == queue_family_properties.size()))
 		throw std::runtime_error("no queue suitable for graphics found");
 
-	std::vector<vk::SurfaceFormatKHR> const surfaceFormats = PhysDevice.getSurfaceFormatsKHR(surface);
+	std::vector<vk::SurfaceFormatKHR> const surfaceFormats = physical_device.getSurfaceFormatsKHR(surface);
 	if (surfaceFormats.empty())
 		throw std::exception("no vulkan rendering surface formats found");
 	format = (surfaceFormats[0].format == vk::Format::eUndefined) ? vk::Format::eB8G8R8A8Unorm : surfaceFormats[0].format;
 
-	surface_capabilities = PhysDevice.getSurfaceCapabilitiesKHR(surface);
+	surface_capabilities = physical_device.getSurfaceCapabilitiesKHR(surface);
 
 	std::cerr << "vulkan rendering surface set up successfully\n";
 }
@@ -535,10 +540,10 @@ void VkRenderer::InitSwapchain()
 		{vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1}
 	};
 
-	for(auto const & image : swapchainImages)
+	for(auto const& image : swapchainImages)
 	{
 		imageViewInfo.image = image;
-		imageViews.push_back(logical_device.createImageView(imageViewInfo));
+		imageViews.emplace_back(logical_device.createImageView(imageViewInfo));
 	}
 
 	std::cerr << "swapchain created successfully\n";
@@ -548,7 +553,7 @@ void VkRenderer::InitSwapchain()
 void VkRenderer::SetUpDepthBuffer()
 {
 	depth_format = vk::Format::eD16Unorm;
-	vk::FormatProperties const formatProperties = PhysDevice.getFormatProperties(depth_format);
+	vk::FormatProperties const formatProperties = physical_device.getFormatProperties(depth_format);
 
 	if (formatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
 		image_tiling = vk::ImageTiling::eLinear;
@@ -571,7 +576,7 @@ void VkRenderer::SetUpDepthBuffer()
 	};
 	depth_image = logical_device.createImage(imageInfo);
 
-	device_memory_properties = PhysDevice.getMemoryProperties();
+	device_memory_properties = physical_device.getMemoryProperties();
 	vk::MemoryRequirements const memRequirements = logical_device.getImageMemoryRequirements(depth_image);
 
 	//auto typeBits = memRequirements.memoryTypeBits;
@@ -589,7 +594,7 @@ void VkRenderer::SetUpDepthBuffer()
 	//}
 	//assert(typeIndex != uint32_t(~0));
 
-	auto const typeIndex = FindMemoryType(PhysDevice.getMemoryProperties(), memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
+	auto const typeIndex = FindMemoryType(physical_device.getMemoryProperties(), memRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
 	depth_mem = logical_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirements.size, typeIndex });
 	logical_device.bindImageMemory(depth_image, depth_mem, 0);
@@ -606,7 +611,7 @@ void VkRenderer::SetUpUniformBuffer()
 
 	vk::MemoryRequirements const memRequirements = logical_device.getBufferMemoryRequirements(uniform_buffer);
 
-	uint32_t const typeIndex = FindMemoryType(PhysDevice.getMemoryProperties(), memRequirements.memoryTypeBits, 
+	uint32_t const typeIndex = FindMemoryType(physical_device.getMemoryProperties(), memRequirements.memoryTypeBits, 
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 
 	uniform_memory = logical_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirements.size, typeIndex });
@@ -761,7 +766,7 @@ void VkRenderer::SetupVertexBuffer()
 	vertex_buffer = logical_device.createBuffer(vk::BufferCreateInfo{ vk::BufferCreateFlags{}, sizeof(coloredCubeData), vk::BufferUsageFlagBits::eVertexBuffer });
 
 	vk::MemoryRequirements memRequirments = logical_device.getBufferMemoryRequirements(vertex_buffer);
-	uint32_t const memTypeIndex = FindMemoryType(PhysDevice.getMemoryProperties(), memRequirments.memoryTypeBits,
+	uint32_t const memTypeIndex = FindMemoryType(physical_device.getMemoryProperties(), memRequirments.memoryTypeBits,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 	vertex_memory = logical_device.allocateMemory(vk::MemoryAllocateInfo{memRequirments.size, memTypeIndex});
 
@@ -893,7 +898,7 @@ vertexBufferMemoryPair VkRenderer::LoadMesh(Mesh const& mesh)
 	vertex_buffers.push_back(logical_device.createBuffer(vk::BufferCreateInfo{vk::BufferCreateFlags{}, sizeof(mesh), vk::BufferUsageFlagBits::eVertexBuffer}));
 
 	vk::MemoryRequirements memRequirments = logical_device.getBufferMemoryRequirements(vertex_buffers.back());
-	uint32_t const memTypeIndex = FindMemoryType(PhysDevice.getMemoryProperties(), memRequirments.memoryTypeBits,
+	uint32_t const memTypeIndex = FindMemoryType(physical_device.getMemoryProperties(), memRequirments.memoryTypeBits,
 		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent);
 	vertex_memory_segments.push_back(logical_device.allocateMemory(vk::MemoryAllocateInfo{ memRequirments.size, memTypeIndex }));
 	auto const pData = static_cast<uint32_t*>(logical_device.mapMemory(vertex_memory_segments.back(), 0, memRequirments.size));
