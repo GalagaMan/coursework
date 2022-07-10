@@ -336,9 +336,14 @@ void VkRenderer::CreateInstance()
 
 void VkRenderer::SetUpVkDevice()
 {
-	PhysDevice = instance.enumeratePhysicalDevices().front();
+	PhysDevice = instance.enumeratePhysicalDevices().back();
 
 	queue_family_properties = PhysDevice.getQueueFamilyProperties();
+
+	for (auto queueprops : PhysDevice.getQueueFamilyProperties())
+	{
+		std::cerr << to_string(queueprops.queueFlags) << " " << queueprops.queueCount << "\n";
+	}
 
 	auto const PropertyIterator = std::find_if(queue_family_properties.begin(),
 		queue_family_properties.end(), [](vk::QueueFamilyProperties const& queue_family_properties)
