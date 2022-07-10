@@ -40,9 +40,10 @@ private:
 	uint32_t ExtensionCount;
 	vk::Instance instance;
 
-	//logical_device related, both physical and virtual
 	ptrdiff_t graphics_queue_family_index;
 	vk::PhysicalDevice PhysDevice;
+
+	vk::DeviceQueueCreateInfo FindQueue(vk::PhysicalDevice& device, vk::QueueFlagBits queueBits, std::vector<float_t>&& priorities);
 
 	vk::PhysicalDeviceMemoryProperties device_memory_properties;
 

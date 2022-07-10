@@ -334,44 +334,51 @@ void VkRenderer::CreateInstance()
 	std::cerr << "instance created successfully\n";
 }
 
+vk::DeviceQueueCreateInfo VkRenderer::FindQueue(vk::PhysicalDevice& device,vk::QueueFlagBits queueBits, std::vector<float_t>&& priorities)
+{
+	auto queueFamilyProperties = device.getQueueFamilyProperties();
+	auto const propertyIterator = std::find_if(queueFamilyProperties.begin(),
+		queueFamilyProperties.end(), [queueBits](vk::QueueFamilyProperties const& queue_family_properties)
+		{return queue_family_properties.queueFlags & queueBits; });
+	auto graphicsQueueFamilyIndex = std::distance(queueFamilyProperties.begin(), propertyIterator);
+
+	return vk::DeviceQueueCreateInfo{ vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphicsQueueFamilyIndex), priorities };
+}
+
 void VkRenderer::SetUpVkDevice()
 {
 	PhysDevice = instance.enumeratePhysicalDevices().back();
 
-	queue_family_properties = PhysDevice.getQueueFamilyProperties();
-
-	for (auto queueprops : PhysDevice.getQueueFamilyProperties())
-	{
-		std::cerr << to_string(queueprops.queueFlags) << " " << queueprops.queueCount << "\n";
-	}
-
-	auto const PropertyIterator = std::find_if(queue_family_properties.begin(),
-		queue_family_properties.end(), [](vk::QueueFamilyProperties const& queue_family_properties)
-		{return queue_family_properties.queueFlags & vk::QueueFlagBits::eGraphics; });
-
-	graphics_queue_family_index = std::distance(queue_family_properties.begin(), PropertyIterator);
-	assert(graphics_queue_family_index < queue_family_properties.size());
-
-	constexpr float_t qPriority = 0.0f;
-	vk::DeviceQueueCreateInfo DeviceQueueInfo{vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphics_queue_family_index), 1, &qPriority};
+	//queue_family_properties = PhysDevice.getQueueFamilyProperties();
+	//
+	//for (auto queueprops : PhysDevice.getQueueFamilyProperties())
+	//{
+	//	std::cerr << to_string(queueprops.queueFlags) << " " << queueprops.queueCount << "\n";
+	//}
+	//
+	//auto const PropertyIterator = std::find_if(queue_family_properties.begin(),
+	//	queue_family_properties.end(), [](vk::QueueFamilyProperties const& queue_family_properties)
+	//	{return queue_family_properties.queueFlags & vk::QueueFlagBits::eGraphics; });
+	//
+	//graphics_queue_family_index = std::distance(queue_family_properties.begin(), PropertyIterator);
+	//assert(graphics_queue_family_index < queue_family_properties.size());
+	//
+	//constexpr float_t qPriority = 0.0f;
+	//vk::DeviceQueueCreateInfo DeviceQueueInfo{vk::DeviceQueueCreateFlags{}, static_cast<uint32_t>(graphics_queue_family_index), 1, &qPriority};
 
 	auto const deviceExtensionProperties = PhysDevice.enumerateDeviceExtensionProperties();
 
 	std::vector<const char*> deviceExtensions{};
 
 	deviceExtensions.emplace_back("VK_KHR_swapchain");
-	//deviceExtensions.reserve(deviceExtensionProperties.size());
-	//
-	//for(size_t i{0}; i < deviceExtensionProperties.size(); i++)
-	//{
-	//	deviceExtensions.push_back(deviceExtensionProperties[i].extensionName);
-	//}
 
+	std::vector<vk::DeviceQueueCreateInfo> queueInfo;
+	queueInfo.emplace_back(FindQueue(PhysDevice, vk::QueueFlagBits::eGraphics, { 0.0f }));
 
 	vk::DeviceCreateInfo const deviceInfo
 	{
 		vk::DeviceCreateFlags(),
-		DeviceQueueInfo,
+		queueInfo,
 		{},
 		deviceExtensions
 	};
@@ -460,7 +467,7 @@ void VkRenderer::InitSwapchain()
 		SwapExtent = surface_capabilities.currentExtent;
 	}
 
-	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eFifoRelaxed;
+	vk::PresentModeKHR constexpr swapCurrentMode = vk::PresentModeKHR::eImmediate;
 
 	vk::SurfaceTransformFlagBitsKHR const precedingTransformation = (surface_capabilities.supportedTransforms & vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		? vk::SurfaceTransformFlagBitsKHR::eIdentity
