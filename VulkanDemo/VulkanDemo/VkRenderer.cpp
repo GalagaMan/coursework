@@ -26,6 +26,13 @@ VkRenderer::VkRenderer(Window& window)
 	image_acquired_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
 	image_has_finished_rendering_sem = logical_device.createSemaphore(vk::SemaphoreCreateInfo{ vk::SemaphoreCreateFlags{} });
 	fence = logical_device.createFence(vk::FenceCreateInfo{});
+	vk::Bool32 supportOne;
+	vk::Bool32 supportTwo;
+	vk::Bool32 supportThree;
+	PhysDevice.getSurfaceSupportKHR(0, surface, &supportOne);
+	PhysDevice.getSurfaceSupportKHR(1, surface, &supportTwo);
+	PhysDevice.getSurfaceSupportKHR(2, surface, &supportThree);
+	std::cerr << supportOne << " " << supportTwo << " " << supportThree << "\n";
 }
 
 VkRenderer::~VkRenderer()
@@ -408,7 +415,7 @@ void VkRenderer::SetUpSurface()
 	if (error != VK_SUCCESS)
 		throw std::runtime_error("failed to create vulkan rendering surface");
 	surface = vk::SurfaceKHR{ _surface };
-
+	
 	available_queue_family_index = PhysDevice.getSurfaceSupportKHR(static_cast<uint32_t>(graphics_queue_family_index), surface)
 	? graphics_queue_family_index : queue_family_properties.size();
 	if (available_queue_family_index == queue_family_properties.size())
